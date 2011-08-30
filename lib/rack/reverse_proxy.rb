@@ -49,6 +49,8 @@ module Rack
         else
           raise "method not supported: #{m}"
         end
+        
+        req.content_type = rackreq.content_type unless rackreq.content_type.nil?
 
         body = ''
         res = http.request(req) do |res|
