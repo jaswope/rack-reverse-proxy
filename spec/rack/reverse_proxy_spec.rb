@@ -84,6 +84,20 @@ describe Rack::ReverseProxy do
         last_response.body.should == "secured content"
       end
     end
+    
+    describe "with debug turned on" do
+      def app
+        @app ||= Rack::ReverseProxy.new(dummy_app) do
+          reverse_proxy '/test', 'http://example.com/', {:debug => true}
+        end
+      end
+
+      it "should print debugging information" do
+        stub_request(:any, 'example.com/test/stuff')
+        app.should_receive(:puts).with("Proxying http://example.org/test/stuff => http://example.com/test/stuff (Headers: {\"HOST\"=>\"example.com\", \"COOKIE\"=>\"\", \"X-Forwarded-Host\"=>\"example.org\"})")
+        get '/test/stuff'
+      end
+    end
 
     describe "with ambiguous routes and all matching" do
       def app
