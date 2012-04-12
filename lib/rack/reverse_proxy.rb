@@ -6,7 +6,7 @@ module Rack
     def initialize(app = nil, &b)
       @app = app || lambda {|env| [404, [], []] }
       @matchers = []
-      @global_options = {:preserve_host => true, :matching => :all, :verify_ssl => true}
+      @global_options = {:preserve_host => true, :matching => :all, :verify_ssl => true, :debug => false}
       instance_eval &b if block_given?
     end
 
@@ -24,7 +24,8 @@ module Rack
         end
       }
       headers['HOST'] = uri.host if all_opts[:preserve_host]
- 
+      puts "Proxying #{rackreq.url} => #{uri} (Headers: #{headers.inspect})" if all_opts[:debug]
+
       session = Net::HTTP.new(uri.host, uri.port)
       session.read_timeout=all_opts[:timeout] if all_opts[:timeout]
 
