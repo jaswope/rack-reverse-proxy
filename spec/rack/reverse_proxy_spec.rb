@@ -84,6 +84,57 @@ describe Rack::ReverseProxy do
         last_response.body.should == "secured content"
       end
     end
+    
+    describe "with headers dictionary provided" do
+      context 'when the header does not exist in the source request' do
+        def app
+          Rack::ReverseProxy.new(dummy_app) do
+            reverse_proxy '/test', 'http://example.com/', {:headers => {'X-EXAMPLE-HEADER' => 'A value'}}
+          end
+        end
+        
+        it "should add the provided headers" do
+          stub_request(:any, 'example.com/test/stuff')
+          get '/test/stuff'
+          a_request(:get, 'http://example.com/test/stuff').with(:headers => {"X-EXAMPLE-HEADER" => "A value"}).should have_been_made
+        end
+      end
+      
+      context 'when the header already appears in the source request' do
+        def app
+          Rack::ReverseProxy.new(dummy_app) do
+            reverse_proxy '/test', 'http://example.com/', {:headers => {'X-EXAMPLE-HEADER' => 'New value'}}
+          end
+        end
+        
+        it "should replace the existing Headers value" do
+          headers = {'Accept'=>'*/*', 'Cookie'=>'', 'Host'=>'example.com', 'User-Agent'=>'Ruby', 
+                     'X-Example-Header'=>'New value', 'X-Forwarded-Host'=>'example.org'}
+          stub_request(:any, 'example.com/test/stuff').with(:headers => headers)
+          get '/test/stuff', {}, {"X-EXAMPLE-HEADER" => "Original value"}
+          a_request(:get, 'http://example.com/test/stuff').with(:headers => {"X-EXAMPLE-HEADER" => "New value"}).should have_been_made
+        end
+      end
+    end
+    
+    describe 'with headers proc provided' do
+      def app
+        Rack::ReverseProxy.new(dummy_app) do
+          reverse_proxy('/test', 'http://example.com/', :headers => lambda do |headers|
+            headers['X-FORWARDED-FOR'].gsub!(', 127.0.0.1', '') if headers['X-FORWARDED-FOR']
+            headers
+          end)
+        end
+      end
+      
+      it "should yield the headers to the proc for manipulation" do
+        headers = {'Accept'=>'*/*', 'Cookie'=>'', 'Host'=>'example.com', 'User-Agent'=>'Ruby', 
+                   'X-Forwarded_For'=>'174.254.197.191', 'X-Forwarded-Host'=>'example.org'}
+        stub_request(:any, 'example.com/test/stuff').with(:headers => headers)
+        get '/test/stuff', {}, {'HTTP_X_Forwarded_For'=>'174.254.197.191, 127.0.0.1'}
+        a_request(:get, 'http://example.com/test/stuff').with(:headers => {"X-Forwarded-For" => "174.254.197.191"}).should have_been_made
+      end
+    end
 
     describe "with ambiguous routes and all matching" do
       def app

@@ -24,7 +24,17 @@ module Rack
         end
       }
       headers['HOST'] = uri.host if all_opts[:preserve_host]
- 
+
+      if headers_opt = all_opts[:headers]
+        if headers_opt.is_a?(Proc)
+          headers = headers_opt.call(headers)
+        elsif headers_opt.is_a?(Hash)
+          headers.merge!(headers_opt)
+        else
+          $stderr.puts "Warning: :headers option provided with unsupported type '#{headers_opt.class}'. Expected a Hash or Proc"
+        end
+      end
+
       session = Net::HTTP.new(uri.host, uri.port)
       session.read_timeout=all_opts[:timeout] if all_opts[:timeout]
 
@@ -35,6 +45,7 @@ module Rack
         # DO NOT DO THIS IN PRODUCTION !!!
         session.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
+
       session.start { |http|
         m = rackreq.request_method
         case m
