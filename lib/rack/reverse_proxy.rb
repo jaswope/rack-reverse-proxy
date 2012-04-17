@@ -23,8 +23,10 @@ module Rack
           headers[$1] = value
         end
       }
-      headers['HOST'] = uri.host if all_opts[:preserve_host]
- 
+      if all_opts[:preserve_host]
+        headers['HOST'] = [uri.host, env['SERVER_PORT']].compact.map(&:to_s).join ':'
+      end
+
       session = Net::HTTP.new(uri.host, uri.port)
       session.read_timeout=all_opts[:timeout] if all_opts[:timeout]
 
