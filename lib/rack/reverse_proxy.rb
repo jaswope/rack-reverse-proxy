@@ -17,10 +17,11 @@ module Rack
 
       uri = matcher.get_uri(rackreq.fullpath,env)
       all_opts = @global_options.dup.merge(matcher.options)
+      all_opts[:strip_headers] ||= []
       headers = Rack::Utils::HeaderHash.new
       env.each { |key, value|
         if key =~ /HTTP_(.*)/
-          headers[$1] = value
+          headers[$1] = value unless all_opts[:strip_headers].include?($1)
         end
       }
       headers['HOST'] = uri.host if all_opts[:preserve_host]
