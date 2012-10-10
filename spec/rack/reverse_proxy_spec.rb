@@ -62,6 +62,35 @@ describe Rack::ReverseProxy do
       a_request(:get, 'http://example.com/test/stuff').with(:headers => {'X-Forwarded-Host' => 'example.org'}).should have_been_made
     end
 
+    describe "with :strip_headers specified in the matcher" do
+      def app
+        Rack::ReverseProxy.new(dummy_app) do
+          reverse_proxy '/test', 'http://example.com/', {:strip_headers => ['REFERER']}
+        end
+      end
+
+      it "should strip the specified headers" do
+        stub_request(:any, 'example.com/test/stuff')
+        get '/test/stuff', {}, {"HTTP_REFERER" => "http://something.bogus"}
+        a_request(:get, 'http://example.com/test/stuff').with(:headers => {"Referer" => "http://something.bogus"}).should_not have_been_made
+      end
+    end
+
+    describe "with :strip_headers specified in the config" do
+      def app
+        Rack::ReverseProxy.new(dummy_app) do
+          reverse_proxy '/test', 'http://example.com/'
+          reverse_proxy_options :strip_headers => ['REFERER']
+        end
+      end
+
+      it "should strip the specified headers" do
+        stub_request(:any, 'example.com/test/stuff')
+        get '/test/stuff', {}, {"HTTP_REFERER" => "http://something.bogus"}
+        a_request(:get, 'http://example.com/test/stuff').with(:headers => {"Referer" => "http://something.bogus"}).should_not have_been_made
+      end
+    end
+
     describe "with preserve host turned off" do
       def app
         Rack::ReverseProxy.new(dummy_app) do
