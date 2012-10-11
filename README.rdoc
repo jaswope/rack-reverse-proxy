@@ -14,6 +14,7 @@ Matchers can be a regex or a string.  If a regex is used, you can use the subcap
 
 Right now if more than one matcher matches any given route, it throws an exception for an ambiguous match.  This will probably change later.  If no match is found, the call is forwarded to your application.
 
+=== Configuring for a Rack app
 Below is an example for configuring the middleware:
 
   require 'rack/reverse_proxy'
@@ -34,6 +35,36 @@ Below is an example for configuring the middleware:
   end
   run app
 
+=== Configuring for Rails 3
+In your application.rb add the middleware configuration as below:
+
+  module MyApp
+    class Application < Rails::Application
+      # Settings in config/environments/* take precedence over those specified here.
+      # Application configuration should go into files in config/initializers
+      # -- all .rb files in that directory are automatically loaded.
+  
+      # ...
+  
+      # add reverse-proxy middleware
+      # reverse proxy middle ware
+      require 'rack/reverse_proxy'
+  
+      config.middleware.use Rack::ReverseProxy do 
+        # Set :preserve_host to true globally (default is true already)
+        reverse_proxy_options :preserve_host => true
+
+        # Forward the path /test* to http://example.com/test*
+        reverse_proxy '/test', 'http://example.com/'
+    
+        # Forward the path /foo/* to http://example.com/bar/*
+        reverse_proxy /^\/foo(\/.*)$/, 'http://example.com/bar$1', :username => 'name', :password => 'basic_auth_secret'
+      end
+  
+    end
+  end
+
+=== Options
 reverse_proxy_options sets global options for all reverse proxies. Available options are:
 * :preserve_host Set to false to omit Host headers
 * :username username for basic auth
