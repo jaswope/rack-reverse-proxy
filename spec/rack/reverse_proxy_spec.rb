@@ -227,6 +227,32 @@ describe Rack::ReverseProxy do
     end
   end
 
+  describe "with body post-processing" do
+
+    def app
+      Rack::ReverseProxy.new(dummy_app) do
+        reverse_proxy '/test', 'http://example.com/' do |body|
+          body.gsub "Proxied", "Modified in string test"
+        end
+        reverse_proxy %r|^/regex(/.*)$|, 'http://example.com$1' do |body|
+          body.gsub "Result", "Modified in pattern test"
+        end
+      end
+    end
+
+    it "should modify the returned page body" do
+      stub_request(:get, 'http://example.com/test/stuff').to_return({:body => "Proxied Result"})
+      get '/test/stuff'
+      last_response.body.should == "Modified in string test Result"
+    end
+
+    it "should modify the returned page body" do
+      stub_request(:get, 'http://example.com/stuff').to_return({:body => "Proxied Result"})
+      get '/regex/stuff'
+      last_response.body.should == "Proxied Modified in pattern test"
+    end
+  end
+
   describe "as a rack app" do
     it "should respond with 404 when the path is not matched" do
       get '/'

@@ -67,6 +67,8 @@ module Rack
           end
         end
 
+        body = matcher.post_process_body(body)
+
         [res.code, create_response_headers(res), [body]]
       }
     end
@@ -103,9 +105,9 @@ module Rack
       @global_options=options
     end
 
-    def reverse_proxy matcher, url, opts={}
+    def reverse_proxy matcher, url, opts={}, &block
       raise GenericProxyURI.new(url) if matcher.is_a?(String) && url.is_a?(String) && URI(url).class == URI::Generic
-      @matchers << ReverseProxyMatcher.new(matcher,url,opts)
+      @matchers << ReverseProxyMatcher.new(matcher,url,opts, &block)
     end
   end
 
@@ -140,11 +142,12 @@ module Rack
   end
 
   class ReverseProxyMatcher
-    def initialize(matching,url,options)
+    def initialize(matching,url,options, &block)
       @matching=matching
       @url=url
       @options=options
       @matching_regexp= matching.kind_of?(Regexp) ? matching : /^#{matching.to_s}/
+      @body_modifier = block if block_given?
     end
 
     attr_reader :matching,:matching_regexp,:url,:options
@@ -162,6 +165,11 @@ module Rack
         URI.join(_url, path)
       end
     end
+
+    def post_process_body(body)
+      @body_modifier.nil? ? body : @body_modifier.call(body)
+    end
+
     def to_s
       %Q("#{matching.to_s}" => "#{url}")
     end
