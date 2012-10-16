@@ -26,6 +26,12 @@ describe Rack::ReverseProxy do
       last_response.should be_ok
     end
 
+    it "should return headers from proxied app as strings" do
+      stub_request(:get, 'http://example.com/test').to_return({:body => "Proxied App", :headers => { 'Proxied-Header' => 'TestValue' } })
+      get '/test'
+      last_response.headers['Proxied-Header'].should == "TestValue"
+    end
+
     it "should proxy requests when a pattern is matched" do
       stub_request(:get, 'http://example.com/test').to_return({:body => "Proxied App"})
       get '/test'
