@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = %q{rack-reverse-proxy}
-  s.version = "0.4.4"
+  s.version = "0.6.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jon Swope"]
@@ -9,12 +9,12 @@ Gem::Specification.new do |s|
   s.email = %q{jaswope@gmail.com}
   s.extra_rdoc_files = [
     "LICENSE",
-    "README.rdoc"
+    "README.md"
   ]
   s.files = [
     ".document",
     "LICENSE",
-    "README.rdoc",
+    "README.md",
     "Rakefile",
     "VERSION",
     "lib/rack/reverse_proxy.rb",
@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
   ]
   s.homepage = %q{http://github.com/jaswope/rack-reverse-proxy}
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.3.7}
+  s.rubygems_version = %q{1.8.24}
   s.summary = %q{A Simple Reverse Proxy for Rack}
   s.test_files = [
     "spec/rack/reverse_proxy_spec.rb",
@@ -33,7 +33,6 @@ Gem::Specification.new do |s|
   ]
 
   s.add_development_dependency "rspec", "~> 1.3.2"
-  s.add_development_dependency "bundler", "~> 1.0.15"
   s.add_development_dependency "rake", "~> 0.8.7"
   s.add_development_dependency "rack-test", "~> 0.5.7"
   s.add_development_dependency "webmock", "~> 1.5.0"
