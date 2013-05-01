@@ -20,9 +20,10 @@ module Rack
       headers = Rack::Utils::HeaderHash.new
       env.each { |key, value|
         if key =~ /HTTP_(.*)/
-          headers[$1] = value
+          headers[$1.gsub('_', '-')] = value
         end
       }
+    debugger
       headers['HOST'] = uri.host if all_opts[:preserve_host]
       headers['X-Forwarded-Host'] = rackreq.host if all_opts[:x_forwarded_host]
 
