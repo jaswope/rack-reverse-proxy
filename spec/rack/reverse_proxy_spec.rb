@@ -62,6 +62,13 @@ describe Rack::ReverseProxy do
       a_request(:get, 'http://example.com/test/stuff').with(:headers => {'X-Forwarded-Host' => 'example.org'}).should have_been_made
     end
 
+    it "should pass the HTTP_USER_AGENT to the proxied server" do
+      stub_request(:any, 'example.com/test/stuff')
+      get '/test/stuff', nil, { 'HTTP_USER_AGENT' => 'test agent' }
+      a_request(:get, 'http://example.com/test/stuff').with(:headers => {'User-Agent' => 'test agent'}).should have_been_made
+    end
+
+
     describe "with preserve host turned off" do
       def app
         Rack::ReverseProxy.new(dummy_app) do
