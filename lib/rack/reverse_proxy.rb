@@ -26,7 +26,7 @@ module Rack
       headers['HOST'] = uri.host if all_opts[:preserve_host]
       headers['X-Forwarded-Host'] = rackreq.host if all_opts[:x_forwarded_host]
 
-      session = Net::HTTP.new(uri.host, uri.port)
+      session = Net::HTTP.new(uri.host, uri.port, all_opts[:proxy_address], all_opts[:proxy_port])
       session.read_timeout=all_opts[:timeout] if all_opts[:timeout]
 
       session.use_ssl = (uri.scheme == 'https')
