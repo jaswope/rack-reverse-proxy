@@ -54,7 +54,7 @@ module Rack
             req.content_length = rackreq.body.size
           end
 
-          req.content_type = rackreq.content_type unless rackreq.content_type.nil?
+          req.content_type = rackreq.content_type if rackreq.content_type
           req.body_stream = rackreq.body
         else
           raise "method not supported: #{m}"
