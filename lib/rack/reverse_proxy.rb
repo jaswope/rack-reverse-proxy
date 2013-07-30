@@ -6,7 +6,7 @@ module Rack
     def initialize(app = nil, &b)
       @app = app || lambda {|env| [404, [], []] }
       @matchers = []
-      @global_options = {:preserve_host => true, :x_forwarded_host => true, :matching => :all, :verify_ssl => true}
+      @global_options = {:preserve_host => true, :x_forwarded_host => true, :matching => :all, :verify_ssl => true, :only_proxy_ssl => false}
       instance_eval &b if block_given?
     end
 
@@ -28,6 +28,8 @@ module Rack
 
       session = Net::HTTP.new(uri.host, uri.port)
       session.read_timeout=all_opts[:timeout] if all_opts[:timeout]
+
+      return @app.call(env) if all_opts[:only_proxy_ssl] && rackreq.scheme != 'https'
 
       session.use_ssl = (uri.scheme == 'https')
       if uri.scheme == 'https' && all_opts[:verify_ssl]

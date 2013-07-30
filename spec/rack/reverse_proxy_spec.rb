@@ -219,6 +219,48 @@ describe Rack::ReverseProxy do
         end
       end
     end
+
+    describe "with only_proxy_ssl" do
+      before :each do
+        stub_request(:get, 'https://example.com/test/').to_return({:body => "Proxied App"})
+      end
+
+      describe "turned on" do
+        def app
+          Rack::ReverseProxy.new(dummy_app) do
+            reverse_proxy '/test', 'https://example.com', {:only_proxy_ssl => true}
+          end
+        end
+
+        it "should not proxy a request sent over HTTP" do
+          get 'https://localhost/test/'
+          last_response.body.should == "Proxied App"
+        end
+
+        it "should proxy a request sent over HTTPS" do
+          get 'http://localhost/test/'
+          last_response.body.should == "Dummy App"
+        end
+      end
+
+      describe "turned off" do
+        def app
+          Rack::ReverseProxy.new(dummy_app) do
+            reverse_proxy '/test', 'https://example.com', {:only_proxy_ssl => false}
+          end
+        end
+
+        it "should proxy a request sent over HTTP" do
+          get 'https://localhost/test/'
+          last_response.body.should == "Proxied App"
+        end
+
+        it "should proxy a request sent over HTTPS" do
+          get 'http://localhost/test/'
+          last_response.body.should == "Proxied App"
+        end
+      end
+    end
   end
 
   describe "as a rack app" do
