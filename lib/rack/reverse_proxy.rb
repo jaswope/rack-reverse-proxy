@@ -47,6 +47,7 @@ module Rack
           req.basic_auth all_opts[:username], all_opts[:password] if all_opts[:username] and all_opts[:password]
 
           if rackreq.body.respond_to?(:read) && rackreq.body.respond_to?(:rewind)
+            rackreq.body.rewind
             body = rackreq.body.read
             req.content_length = body.size
             rackreq.body.rewind
