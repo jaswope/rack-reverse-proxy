@@ -19,7 +19,7 @@ module Rack
       all_opts = @global_options.dup.merge(matcher.options)
       headers = Rack::Utils::HeaderHash.new
       env.each { |key, value|
-        if key =~ /HTTP_(.*)/
+        if key =~ /HTTP_(.*)/ and not value.nil? and not value.empty?
           headers[$1] = value
         end
       }
@@ -37,6 +37,7 @@ module Rack
         session.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
       session.start { |http|
+        puts "Reverse Request Headers: #{headers.inspect}"
         m = rackreq.request_method
         case m
         when "GET", "HEAD", "DELETE", "OPTIONS", "TRACE"
@@ -67,6 +68,8 @@ module Rack
           end
         end
 
+        body = matcher.post_process_body(body, res)
+
         [res.code, create_response_headers(res), [body]]
       }
     end
@@ -88,7 +91,8 @@ module Rack
     end
 
     def create_response_headers http_response
-      response_headers = Rack::Utils::HeaderHash.new(http_response.to_hash)
+      headers = Hash[http_response.to_hash.collect{ |k,v| [k,v.first]}]
+      response_headers = Rack::Utils::HeaderHash.new(headers)
       # handled by Rack
       response_headers.delete('status')
       # TODO: figure out how to handle chunked responses
@@ -102,9 +106,9 @@ module Rack
       @global_options=options
     end
 
-    def reverse_proxy matcher, url, opts={}
+    def reverse_proxy matcher, url, opts={}, &block
       raise GenericProxyURI.new(url) if matcher.is_a?(String) && url.is_a?(String) && URI(url).class == URI::Generic
-      @matchers << ReverseProxyMatcher.new(matcher,url,opts)
+      @matchers << ReverseProxyMatcher.new(matcher,url,opts, &block)
     end
   end
 
@@ -139,11 +143,12 @@ module Rack
   end
 
   class ReverseProxyMatcher
-    def initialize(matching,url,options)
+    def initialize(matching,url,options, &block)
       @matching=matching
       @url=url
       @options=options
       @matching_regexp= matching.kind_of?(Regexp) ? matching : /^#{matching.to_s}/
+      @body_modifier = block if block_given?
     end
 
     attr_reader :matching,:matching_regexp,:url,:options
@@ -161,6 +166,11 @@ module Rack
         URI.join(_url, path)
       end
     end
+
+    def post_process_body(body, res)
+      @body_modifier.nil? ? body : @body_modifier.call(body, res)
+    end
+
     def to_s
       %Q("#{matching.to_s}" => "#{url}")
     end

@@ -26,6 +26,12 @@ describe Rack::ReverseProxy do
       last_response.should be_ok
     end
 
+    it "should return headers from proxied app as strings" do
+      stub_request(:get, 'http://example.com/test').to_return({:body => "Proxied App", :headers => { 'Proxied-Header' => 'TestValue' } })
+      get '/test'
+      last_response.headers['Proxied-Header'].should == "TestValue"
+    end
+
     it "should proxy requests when a pattern is matched" do
       stub_request(:get, 'http://example.com/test').to_return({:body => "Proxied App"})
       get '/test'
@@ -218,6 +224,32 @@ describe Rack::ReverseProxy do
           end
         end
       end
+    end
+  end
+
+  describe "with body post-processing" do
+
+    def app
+      Rack::ReverseProxy.new(dummy_app) do
+        reverse_proxy '/test', 'http://example.com/' do |body|
+          body.gsub "Proxied", "Modified in string test"
+        end
+        reverse_proxy %r|^/regex(/.*)$|, 'http://example.com$1' do |body|
+          body.gsub "Result", "Modified in pattern test"
+        end
+      end
+    end
+
+    it "should modify the returned page body" do
+      stub_request(:get, 'http://example.com/test/stuff').to_return({:body => "Proxied Result"})
+      get '/test/stuff'
+      last_response.body.should == "Modified in string test Result"
+    end
+
+    it "should modify the returned page body" do
+      stub_request(:get, 'http://example.com/stuff').to_return({:body => "Proxied Result"})
+      get '/regex/stuff'
+      last_response.body.should == "Proxied Modified in pattern test"
     end
   end
 
