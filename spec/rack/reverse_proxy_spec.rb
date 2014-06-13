@@ -50,6 +50,13 @@ describe Rack::ReverseProxy do
       last_response.headers['transfer-encoding'].should == nil
     end
 
+    it "the response header should include content-length" do
+      body = 'this is the test body'
+      stub_request(:any, 'example.com/test/stuff').to_return(:body => body, :headers => {'Content-Length' => '10'})
+      get '/test/stuff'
+      last_response.headers['Content-Length'].should == body.length.to_s
+    end
+
     it "should set the Host header" do
       stub_request(:any, 'example.com/test/stuff')
       get '/test/stuff'

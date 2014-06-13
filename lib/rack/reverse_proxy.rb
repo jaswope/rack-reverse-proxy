@@ -65,6 +65,8 @@ module Rack
           res.read_body do |segment|
             body << segment
           end
+          # ensure content length header is correct
+          res.content_length = body.bytesize
         end
 
         [res.code, create_response_headers(res), [body]]
@@ -93,7 +95,7 @@ module Rack
       response_headers.delete('status')
       # TODO: figure out how to handle chunked responses
       response_headers.delete('transfer-encoding')
-      # TODO: Verify Content Length, and required Rack headers
+      # TODO: Verify required Rack headers
       response_headers
     end
 
