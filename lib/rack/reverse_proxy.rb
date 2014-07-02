@@ -20,15 +20,13 @@ module Rack
       all_opts = @global_options.dup.merge(matcher.options)
       headers = Rack::Utils::HeaderHash.new
       
-      env.each { |key, value|
+      env.each do |key, value|
         if key =~ /HTTP_(.*)/
           headers[$1] = value
         end
-      }
-      
-      @headers.each do |key,value|
-        headers[key] = value
       end
+      
+      @headers.each { |key,value| headers[key] = value }
       
       headers['HOST'] = uri.host if all_opts[:preserve_host]
       headers['X-Forwarded-Host'] = rackreq.host if all_opts[:x_forwarded_host]
