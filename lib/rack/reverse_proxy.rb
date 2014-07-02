@@ -7,9 +7,10 @@ module Rack
       @app = app || lambda {|env| [404, [], []] }
       @matchers = []
       @global_options = {:preserve_host => true, :x_forwarded_host => true, :matching => :all, :verify_ssl => true}
+      @headers = {}
       instance_eval &b if block_given?
     end
-
+    
     def call(env)
       rackreq = Rack::Request.new(env)
       matcher = get_matcher rackreq.fullpath
@@ -18,11 +19,15 @@ module Rack
       uri = matcher.get_uri(rackreq.fullpath,env)
       all_opts = @global_options.dup.merge(matcher.options)
       headers = Rack::Utils::HeaderHash.new
-      env.each { |key, value|
+      
+      env.each do |key, value|
         if key =~ /HTTP_(.*)/
           headers[$1] = value
         end
-      }
+      end
+      
+      @headers.each { |key,value| headers[key] = value }
+      
       headers['HOST'] = uri.host if all_opts[:preserve_host]
       headers['X-Forwarded-Host'] = rackreq.host if all_opts[:x_forwarded_host]
 
@@ -102,9 +107,14 @@ module Rack
       @global_options=options
     end
 
-    def reverse_proxy matcher, url, opts={}
+    def reverse_proxy matcher, url, opts={}, &block
+      block.yield if block_given?
       raise GenericProxyURI.new(url) if matcher.is_a?(String) && url.is_a?(String) && URI(url).class == URI::Generic
       @matchers << ReverseProxyMatcher.new(matcher,url,opts)
+    end
+    
+    def add_header name, value
+      @headers[name.to_s] = value.to_s
     end
   end
 
