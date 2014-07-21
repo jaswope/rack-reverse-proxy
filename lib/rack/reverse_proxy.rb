@@ -90,6 +90,8 @@ module Rack
     def create_response_headers http_response
       response_headers = Rack::Utils::HeaderHash.new(http_response.to_hash)
       # handled by Rack
+      response_headers.delete('content-length')
+      # handled by Rack
       response_headers.delete('status')
       # TODO: figure out how to handle chunked responses
       response_headers.delete('transfer-encoding')
