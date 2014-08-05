@@ -6,7 +6,7 @@ module Rack
     def initialize(app = nil, &b)
       @app = app || lambda {|env| [404, [], []] }
       @matchers = []
-      @global_options = {:preserve_host => true, :matching => :all, :verify_ssl => true}
+      @global_options = {:preserve_host => true, :x_forwarded_host => true, :matching => :all, :verify_ssl => true}
       instance_eval &b if block_given?
     end
 
@@ -23,9 +23,9 @@ module Rack
           headers[$1] = value
         end
       }
-      if all_opts[:preserve_host]
-        headers['HOST'] = [uri.host, env['SERVER_PORT']].compact.map(&:to_s).join ':'
-      end
+
+      headers['HOST'] = host_with_port uri, env['SERVER_PORT'] if all_opts[:preserve_host]
+      headers['X-Forwarded-Host'] = host_with_port uri, env['SERVER_PORT'] if all_opts[:x_forwarded_host]
 
       session = Net::HTTP.new(uri.host, uri.port)
       session.read_timeout=all_opts[:timeout] if all_opts[:timeout]
