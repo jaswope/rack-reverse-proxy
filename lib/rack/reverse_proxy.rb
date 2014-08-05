@@ -12,7 +12,7 @@ module Rack
 
     def call(env)
       rackreq = Rack::Request.new(env)
-      matcher = get_matcher rackreq.fullpath
+      matcher = get_matcher rackreq.url
       return @app.call(env) if matcher.nil?
 
       uri = matcher.get_uri(rackreq.fullpath,env)
