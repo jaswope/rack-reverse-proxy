@@ -97,6 +97,9 @@ module Rack
       # TODO: figure out how to handle chunked responses
       response_headers.delete('transfer-encoding')
       # TODO: Verify Content Length, and required Rack headers
+      # Workaround: Ignore Content-Length headers to support Rack::Deflate
+      # gzipped responses
+      response_headers.delete('Content-Length')
       response_headers
     end
 
