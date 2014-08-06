@@ -23,7 +23,6 @@ module Rack
           headers[$1] = value
         end
       }
-
       headers['HOST'] = host_with_port uri, env['SERVER_PORT'] if all_opts[:preserve_host]
       headers['X-Forwarded-Host'] = host_with_port uri, env['SERVER_PORT'] if all_opts[:x_forwarded_host]
 
@@ -73,6 +72,9 @@ module Rack
     end
 
     private
+    def host_with_port uri, port
+      [uri.host, port].compact.map(&:to_s).join ':'
+    end
 
     def get_matcher path
       matches = @matchers.select do |matcher|
