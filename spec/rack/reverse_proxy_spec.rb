@@ -114,7 +114,7 @@ RSpec.describe Rack::ReverseProxy do
         Rack::ReverseProxy.new(dummy_app) do
           reverse_proxy_options :matching => :all
           reverse_proxy '/test', 'http://example.com/'
-          reverse_proxy /^\/test/, 'http://example.com/'
+          reverse_proxy(/^\/test/, 'http://example.com/')
         end
       end
 
@@ -128,7 +128,7 @@ RSpec.describe Rack::ReverseProxy do
         Rack::ReverseProxy.new(dummy_app) do
           reverse_proxy_options :matching => :first
           reverse_proxy '/test', 'http://example1.com/'
-          reverse_proxy /^\/test/, 'http://example2.com/'
+          reverse_proxy(/^\/test/, 'http://example2.com/')
         end
       end
 
