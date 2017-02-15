@@ -49,6 +49,16 @@ RSpec.describe Rack::ReverseProxy do
       a_request(:get, 'http://example.com/test/stuff').with(:headers => {'X-Forwarded-Host' => 'example.org'}).should have_been_made
     end
 
+    it 'should format the headers correctly to avoid duplicates' do
+      stub_request(:get, 'http://example.com/2test').to_return({:status => 301, :headers => {:status => '301 Moved Permanently'}})
+
+      get '/2test'
+
+      headers = last_response.headers.to_hash
+      headers['Status'].should == "301 Moved Permanently"
+      headers['status'].should be_nil
+    end
+
     describe "with preserve host turned off" do
       def app
         Rack::ReverseProxy.new(dummy_app) do
@@ -107,6 +117,12 @@ RSpec.describe Rack::ReverseProxy do
         # puts last_response.headers.inspect
         last_response.headers['location'].should == "http://example.com/bar"
       end
+
+      it "should keep the port of the location" do
+        stub_request(:get, "http://example.com/test/stuff").to_return(:headers => {"location" => "http://test.com/bar"})
+        get 'http://example.com:3000/test/stuff'
+        last_response.headers['location'].should == "http://example.com:3000/bar"
+      end
     end
 
     describe "with ambiguous routes and all matching" do
@@ -114,7 +130,7 @@ RSpec.describe Rack::ReverseProxy do
         Rack::ReverseProxy.new(dummy_app) do
           reverse_proxy_options :matching => :all
           reverse_proxy '/test', 'http://example.com/'
-          reverse_proxy /^\/test/, 'http://example.com/'
+          reverse_proxy(/^\/test/, 'http://example.com/')
         end
       end
 
@@ -128,7 +144,7 @@ RSpec.describe Rack::ReverseProxy do
         Rack::ReverseProxy.new(dummy_app) do
           reverse_proxy_options :matching => :first
           reverse_proxy '/test', 'http://example1.com/'
-          reverse_proxy /^\/test/, 'http://example2.com/'
+          reverse_proxy(/^\/test/, 'http://example2.com/')
         end
       end
 
